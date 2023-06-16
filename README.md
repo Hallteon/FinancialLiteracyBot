@@ -1,2 +1,2 @@
 # financial_literacy_bot
-Telegram бот-опросник по финансовой грамотности.
+This is a telegram bot for surveys on financial literacy

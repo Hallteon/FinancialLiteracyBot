@@ -12,3 +12,5 @@ venv.bak/
 .idea/*
 
 .env
+
+database.db
