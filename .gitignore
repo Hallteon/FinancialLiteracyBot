@@ -11,6 +11,7 @@ venv.bak/
 .pyre/
 .idea/*
 
+# Other misc
 .env
-
 database.db
+__pycache__/
