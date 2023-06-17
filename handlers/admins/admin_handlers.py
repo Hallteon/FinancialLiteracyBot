@@ -3,18 +3,18 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from filters.admin_filter import IsAdmin
 from loader import dp
-from states.test_states import NewSection
+from states.test_states import *
 from utils.db_stuff.models import Section, Question
 from utils.misc.inline_keyboards import *
 
 
 @dp.message_handler(IsAdmin(), Command('admin'))
 async def send_admin_panel(message: types.Message):
-    await message.answer('<b>Меню редактирования теста:</b>', reply_markup=inline_test_panel)
+    await message.answer('<b>Админ панель:</b>', reply_markup=inline_admin_panel)
 
 
-@dp.callback_query_handler(text='panel_exit')
-async def exit_panel(callback: types.CallbackQuery):
+@dp.callback_query_handler(text='admin_exit')
+async def exit_admin_panel(callback: types.CallbackQuery):
     await callback.message.delete()
 
 
@@ -98,3 +98,53 @@ async def get_question_all_points(callback: types.CallbackQuery, state: FSMConte
     await state.reset_data()
     await state.reset_state()
 
+
+@dp.callback_query_handler(text='get_sections_panel')
+async def get_sections_panel(callback: types.CallbackQuery):
+    await callback.message.edit_text('<b>Выберите пункт:</b>', reply_markup=inline_sections_panel)
+    await SectionsList.first()
+
+
+@dp.callback_query_handler(text='get_all_sections', state=SectionsList.sections_page)
+async def get_all_sections(callback: types.CallbackQuery, state: FSMContext):
+    sections_dict = generate_sections_dict()
+    inline_sections_page = generate_sections_page(1, sections_dict)
+
+    await callback.message.edit_text('<b>Список всех секций (нажмите на секцию для удаления):</b>',
+                                     reply_markup=inline_sections_page)
+
+    async with state.proxy() as data:
+        data['sections_pages'] = sections_dict
+        data['current_page'] = 1
+
+
+@dp.callback_query_handler(text_contains='sections_page', state=SectionsList.sections_page)
+async def get_sections_page(callback: types.CallbackQuery, state: FSMContext):
+    move = callback.data.split(':')[-1]
+
+    async with state.proxy() as data:
+        if move == 'next':
+            data['current_page'] += 1
+
+        elif move == 'previous':
+            data['current_page'] -= 1
+
+        inline_sections_page = generate_sections_page(data['current_page'], data['sections_pages'])
+
+        await callback.message.edit_text('<b>Список всех секций (нажмите на секцию для удаления):</b>',
+                                         reply_markup=inline_sections_page)
+
+
+@dp.callback_query_handler(text='exit_from_all_sections', state=SectionsList.sections_page)
+async def exit_from_all_sections(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.reset_data()
+    await state.reset_state()
+
+
+@dp.callback_query_handler(text_contains='delete_section', state=SectionsList.sections_page)
+async def delete_section(callback: types.CallbackQuery, state: FSMContext):
+    section_name = callback.data.split(':')[-1]
+
+    Section.delete().where(Section.name == section_name).execute()
+    await get_all_sections(callback, state)

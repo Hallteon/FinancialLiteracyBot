@@ -7,3 +7,7 @@ class NewSection(StatesGroup):
     question_answer = State()
     question_points = State()
     section_all_points = State()
+
+
+class SectionsList(StatesGroup):
+    sections_page = State()
