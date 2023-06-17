@@ -4,7 +4,7 @@ db = SqliteDatabase('database.db')
 
 
 class User(Model):
-    id = CharField(primary_key=True, unique=True)
+    id = CharField(primary_key=True)
     username = CharField()
     points = IntegerField(default=0)
 

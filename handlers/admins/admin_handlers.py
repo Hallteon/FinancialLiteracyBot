@@ -169,20 +169,78 @@ async def get_mail_text(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text='start_mailing', state=Mailing.mail_manage)
 async def start_mailing(callback: types.CallbackQuery, state: FSMContext):
     users = list(User.select().execute())
+    users_len = len(users)
+    users_quality = len(users)
     data = await state.get_data()
     mail = data['mail_text']
-
-    await callback.message.edit_text(f'<b>Рассылка успешно разослана {len(users)} пользователям!</b>')
+    iterator = 1
 
     for user in users:
-        await dp.bot.send_message(chat_id=user.id, text=mail)
+        await callback.message.edit_text(f'<b>Разослано {iterator} из {users_len} пользователям...</b>')
 
+        iterator += 1
+
+        try:
+            await dp.bot.send_message(chat_id=user.id, text=mail)
+
+        except Exception:
+            users_quality -= 1
+            continue
+
+    await callback.message.edit_text(f'<b>Рассылка успешно разослана {users_quality} пользователям!</b>')
     await state.reset_data()
     await state.reset_state()
 
 
 @dp.callback_query_handler(text='cancel_mailing', state=Mailing.mail_manage)
-async def start_mailing(callback: types.CallbackQuery, state: FSMContext):
+async def cancel_mailing(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text('<b>Рассылка успешно отменена!</b>')
     await state.reset_data()
     await state.reset_state()
+
+
+@dp.callback_query_handler(text='get_users_panel')
+async def get_users_panel(callback: types.CallbackQuery):
+    await callback.message.edit_text('<b>Выберите пункт:</b>', reply_markup=inline_users_panel)
+    await UsersList.first()
+
+
+@dp.callback_query_handler(text='exit_from_all_users', state=UsersList.users_page)
+async def exit_from_all_users(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.reset_data()
+    await state.reset_state()
+
+
+@dp.callback_query_handler(text='get_all_users', state=UsersList.users_page)
+async def get_all_users(callback: types.CallbackQuery, state: FSMContext):
+    users_dict = generate_users_dict()
+    users_page = generate_users_page(1, users_dict)
+    users_text_list = users_page[0]
+    inline_users_page = users_page[1]
+
+    await callback.message.edit_text(f'<b>Список всех пользователей:</b>\n{users_text_list}',
+                                     reply_markup=inline_users_page)
+
+    async with state.proxy() as data:
+        data['users_pages'] = users_dict
+        data['current_page'] = 1
+
+
+@dp.callback_query_handler(text_contains='users_page', state=UsersList.users_page)
+async def get_users_page(callback: types.CallbackQuery, state: FSMContext):
+    move = callback.data.split(':')[-1]
+
+    async with state.proxy() as data:
+        if move == 'next':
+            data['current_page'] += 1
+
+        elif move == 'previous':
+            data['current_page'] -= 1
+
+        users_page = generate_users_page(data['current_page'], data['users_pages'])
+        users_text_list = users_page[0]
+        inline_users_page = users_page[1]
+
+        await callback.message.edit_text(f'<b>Список всех пользователей:</b>\n{users_text_list}',
+                                         reply_markup=inline_users_page)
