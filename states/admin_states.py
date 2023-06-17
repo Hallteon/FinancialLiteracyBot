@@ -11,3 +11,8 @@ class NewSection(StatesGroup):
 
 class SectionsList(StatesGroup):
     sections_page = State()
+
+
+class Mailing(StatesGroup):
+    mail_text = State()
+    mail_manage = State()

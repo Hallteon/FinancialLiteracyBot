@@ -3,8 +3,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from filters.admin_filter import IsAdmin
 from loader import dp
-from states.test_states import *
-from utils.db_stuff.models import Section, Question
+from states.admin_states import *
+from utils.db_stuff.models import Section, Question, User
 from utils.misc.inline_keyboards import *
 
 
@@ -148,3 +148,41 @@ async def delete_section(callback: types.CallbackQuery, state: FSMContext):
 
     Section.delete().where(Section.name == section_name).execute()
     await get_all_sections(callback, state)
+
+
+@dp.callback_query_handler(text='create_mailing')
+async def create_mailing(callback: types.CallbackQuery):
+    await callback.message.edit_text('<b>Напишите тект рассылки:</b>')
+    await Mailing.first()
+
+
+@dp.message_handler(state=Mailing.mail_text)
+async def get_mail_text(message: types.Message, state: FSMContext):
+    await message.answer('<b>Меню рассылки:</b>', reply_markup=inline_mailing_panel)
+
+    async with state.proxy() as data:
+        data['mail_text'] = message.text
+
+    await Mailing.next()
+
+
+@dp.callback_query_handler(text='start_mailing', state=Mailing.mail_manage)
+async def start_mailing(callback: types.CallbackQuery, state: FSMContext):
+    users = list(User.select().execute())
+    data = await state.get_data()
+    mail = data['mail_text']
+
+    await callback.message.edit_text(f'<b>Рассылка успешно разослана {len(users)} пользователям!</b>')
+
+    for user in users:
+        await dp.bot.send_message(chat_id=user.id, text=mail)
+
+    await state.reset_data()
+    await state.reset_state()
+
+
+@dp.callback_query_handler(text='cancel_mailing', state=Mailing.mail_manage)
+async def start_mailing(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('<b>Рассылка успешно отменена!</b>')
+    await state.reset_data()
+    await state.reset_state()

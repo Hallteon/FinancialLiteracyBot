@@ -9,8 +9,8 @@ delete_section_callback_data = CallbackData('delete_section', 'name')
 
 inline_admin_panel = InlineKeyboardMarkup(row_width=2)
 inline_admin_panel.add(InlineKeyboardButton(text='Создать секцию', callback_data='create_section'),
-                       InlineKeyboardButton(text='Редактировать секцию', callback_data='edit_section'),
-                       InlineKeyboardButton(text='Секции', callback_data='get_sections_panel'),
+                       InlineKeyboardButton(text='Редактировать секции', callback_data='get_sections_panel'),
+                       InlineKeyboardButton(text='Сделать рассылку', callback_data='create_mailing'),
                        InlineKeyboardButton(text='Выйти', callback_data='admin_exit'))
 
 inline_add_question_panel = InlineKeyboardMarkup(row_width=1)
@@ -24,7 +24,11 @@ inline_add_answer_panel.add(InlineKeyboardButton(text='Да', callback_data=add_
 
 inline_sections_panel = InlineKeyboardMarkup(row_width=1)
 inline_sections_panel.add(InlineKeyboardButton(text='Список всех секций', callback_data='get_all_sections'),
-                          InlineKeyboardButton(text='Выйти', callback_data='admin_exit'))
+                          InlineKeyboardButton(text='Выйти', callback_data='exit_from_all_sections'))
+
+inline_mailing_panel = InlineKeyboardMarkup(row_width=2)
+inline_mailing_panel.add(InlineKeyboardButton(text='Запустить рассыку', callback_data='start_mailing'),
+                         InlineKeyboardButton(text='Отменить рассылку', callback_data='cancel_mailing'))
 
 
 def generate_sections_dict():
