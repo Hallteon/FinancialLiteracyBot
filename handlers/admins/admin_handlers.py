@@ -4,8 +4,8 @@ from aiogram.dispatcher.filters import Command
 from filters.admin_filter import IsAdmin
 from loader import dp
 from states.admin_states import *
-from utils.db_stuff.models import Section, Question, User
-from utils.misc.inline_keyboards import *
+from utils.db_stuff.models import Section, Question, User, delete_section_by_id
+from utils.misc.admin_inline_keyboards import *
 
 
 @dp.message_handler(IsAdmin(), Command('admin'))
@@ -36,8 +36,14 @@ async def get_section_name(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text='create_question', state=NewSection.section_name)
 async def get_question_text(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('<b>Напишите вопрос:</b>')
+    await callback.message.edit_text('<b>Напишите вопрос:</b>', reply_markup=inline_question_cancel)
     await NewSection.next()
+
+
+@dp.callback_query_handler(text='cancel_create_question', state=NewSection.all_states)
+async def cancel_create_question(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(NewSection.section_name)
+    await callback.message.edit_text('<b>Выберите пункт:</b>', reply_markup=inline_add_question_panel)
 
 
 @dp.message_handler(state=NewSection.question_text)
@@ -71,7 +77,7 @@ async def get_question_points(message: types.Message, state: FSMContext):
     await message.answer('<b>Выберите для продолжения:</b>', reply_markup=inline_add_question_panel)
 
     async with state.proxy() as data:
-        data['question_points'] = int(message.text)
+        data['question_points'] = int(''.join(i for i in message.text if i.isdigit()))
         data['all_points'] += data['question_points']
         data['questions'].append([data['question_text'], data['question_answer'], data['question_points']])
 
@@ -80,10 +86,10 @@ async def get_question_points(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text='section_edit_exit', state=NewSection.all_states)
 async def get_question_all_points(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('<b>Секция успешно сохранена</b>')
+    await callback.message.edit_text('<b>Секция успешно сохранена</b>', reply_markup=inline_admin_panel)
 
     data = await state.get_data()
-    new_section = Section.create(name=data['section_name'])
+    new_section = Section.create(name=data['section_name'], all_points=data['all_points'])
 
     new_section.save()
 
@@ -144,9 +150,9 @@ async def exit_from_all_sections(callback: types.CallbackQuery, state: FSMContex
 
 @dp.callback_query_handler(text_contains='delete_section', state=SectionsList.sections_page)
 async def delete_section(callback: types.CallbackQuery, state: FSMContext):
-    section_name = callback.data.split(':')[-1]
+    section_id = callback.data.split(':')[-1]
 
-    Section.delete().where(Section.name == section_name).execute()
+    delete_section_by_id(section_id)
     await get_all_sections(callback, state)
 
 

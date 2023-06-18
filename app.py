@@ -10,6 +10,15 @@ async def on_startup(dispatcher):
     db.connect()
     db.create_tables([User, Question, Section, QuestionSection], safe=True)
 
+    # question = Question.delete().where(Question.id == 12)
+    # question.execute()
+    #
+    # question = Question.delete().where(Question.id == 13)
+    # question.execute()
+    #
+    # quest_sec = QuestionSection.delete().where(QuestionSection.id == 12)
+    # quest_sec.execute()
+
     print('Бот включен!')
 
 

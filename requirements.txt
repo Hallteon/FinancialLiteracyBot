@@ -1,6 +1,5 @@
 aiogram==2.25.1
 environs==9.5.0
 peewee==3.16.0
-tqdm==4.65.0
 
 # Python 3.11
