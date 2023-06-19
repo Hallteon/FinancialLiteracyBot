@@ -60,7 +60,7 @@ def get_all_sections_questions_data():
     questions_iterator = 1
 
     for section in sections:
-        data[section.id] = {'section_name': section.name, 'total_points': 0, 'all_points': 0, 'questions': {}}
+        data[section.id] = {'section_name': section.name, 'total_points': 0, 'all_points': section.all_points, 'questions': {}}
         sections_iterator += 1
 
     for question_section in query:

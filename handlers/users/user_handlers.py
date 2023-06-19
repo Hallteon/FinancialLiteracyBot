@@ -1,10 +1,15 @@
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, CommandHelp, Command
-from loader import dp
+from aiogram.types import InputFile
+
+from loader import dp, bot
 from utils.db_stuff.models import User, get_all_sections_questions_data, set_user_points
 from utils.misc.user_inline_keyboards import *
 from states.user_states import *
+from utils.misc.radar_chart import *
 
 
 @dp.message_handler(CommandStart())
@@ -18,6 +23,8 @@ async def bot_start(message: types.Message):
            f"чтобы увидеть доступные команды этого бота ✅</b>"
 
     await message.answer(text)
+
+    print(message.from_user.id)
 
     if type(new_user) != tuple:
         new_user.save()
@@ -81,6 +88,7 @@ async def answer_question(callback: types.CallbackQuery, state: FSMContext):
 async def get_test_results(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     sections = data['questions_sections']
+    radar_chart = get_radar_chart(sections)
     total_points = 0
     results = ''
 
@@ -88,10 +96,17 @@ async def get_test_results(callback: types.CallbackQuery, state: FSMContext):
         total_points += section['total_points']
         results += f"<b>Секция {section_id} - \"{section['section_name']}\"</b> - <b>{section['total_points']}</b> из <b>{section['all_points']}</b> баллов;\n"
 
-    await callback.message.edit_text(f'<b>Ваши результаты:\n</b>\n{results}\n<b>Всего набрано {total_points}</b> баллов.')
+    radar_chart.savefig(f'images/radar_chart{callback.from_user.id}.png')
+    radar_chart_image = InputFile(f'images/radar_chart{callback.from_user.id}.png')
+
+    await callback.message.delete()
+    await bot.send_photo(callback.message.chat.id, radar_chart_image,
+                         caption=f'<b>Ваши результаты:\n</b>\n{results}\nВсего набрано <b>{total_points}</b> баллов.')
 
     set_user_points(callback.from_user.id, total_points)
 
     await state.reset_data()
     await state.reset_state()
+
+    os.remove(f'images/radar_chart{callback.from_user.id}.png')
 
