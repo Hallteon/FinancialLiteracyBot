@@ -144,6 +144,7 @@ async def get_sections_page(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(text='exit_from_all_sections', state=SectionsList.sections_page)
 async def exit_from_all_sections(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
+    await send_admin_panel(callback.message)
     await state.reset_data()
     await state.reset_state()
 
@@ -187,7 +188,7 @@ async def start_mailing(callback: types.CallbackQuery, state: FSMContext):
         iterator += 1
 
         try:
-            await dp.bot.send_message(chat_id=user.id, text=mail)
+            await dp.bot.send_message(chat_id=user.user_id, text=mail)
 
         except Exception:
             users_quality -= 1
@@ -214,6 +215,7 @@ async def get_users_panel(callback: types.CallbackQuery):
 @dp.callback_query_handler(text='exit_from_all_users', state=UsersList.users_page)
 async def exit_from_all_users(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
+    await send_admin_panel(callback.message)
     await state.reset_data()
     await state.reset_state()
 
@@ -225,17 +227,19 @@ async def get_all_users(callback: types.CallbackQuery, state: FSMContext):
     users_text_list = users_page[0]
     inline_users_page = users_page[1]
 
-    await callback.message.edit_text(f'<b>Список всех пользователей:</b>\n{users_text_list}',
-                                     reply_markup=inline_users_page)
-
     async with state.proxy() as data:
+        data['users_quality'] = User.select().count()
         data['users_pages'] = users_dict
         data['current_page'] = 1
+
+        await callback.message.edit_text(f'<b>Список всех пользователей ({data["users_quality"]} пользователей):</b>\n{users_text_list}',
+                                         reply_markup=inline_users_page)
 
 
 @dp.callback_query_handler(text_contains='users_page', state=UsersList.users_page)
 async def get_users_page(callback: types.CallbackQuery, state: FSMContext):
     move = callback.data.split(':')[-1]
+    users_quality = 0
 
     async with state.proxy() as data:
         if move == 'next':
@@ -244,9 +248,10 @@ async def get_users_page(callback: types.CallbackQuery, state: FSMContext):
         elif move == 'previous':
             data['current_page'] -= 1
 
+        users_quality = data['users_quality']
         users_page = generate_users_page(data['current_page'], data['users_pages'])
         users_text_list = users_page[0]
         inline_users_page = users_page[1]
 
-        await callback.message.edit_text(f'<b>Список всех пользователей:</b>\n{users_text_list}',
+        await callback.message.edit_text(f'<b>Список всех пользователей ({users_quality} пользователей):</b>\n{users_text_list}',
                                          reply_markup=inline_users_page)

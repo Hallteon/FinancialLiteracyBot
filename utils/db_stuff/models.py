@@ -60,17 +60,19 @@ def get_all_sections_questions_data():
     questions_iterator = 1
 
     for section in sections:
-        data[section.id] = {'section_name': section.name, 'total_points': 0, 'all_points': section.all_points, 'questions': {}}
+        data[sections_iterator] = {'section_name': section.name, 'total_points': 0, 'all_points': section.all_points,
+                                   'questions': {}}
+        query = (Question.select().join(QuestionSection).join(Section).where(Section.id == section.id))
+
+        for question in query:
+            data[sections_iterator]['questions'][questions_iterator] = {
+                'question': question.question,
+                'answer': question.answer,
+                'points': question.points
+            }
+            questions_iterator += 1
+
         sections_iterator += 1
-
-    for question_section in query:
-        data[question_section.section.id]['questions'][questions_iterator] = {
-            'question': question_section.question.question,
-            'answer': question_section.question.answer,
-            'points': question_section.question.points
-        }
-
-        questions_iterator += 1
 
     return data
 
@@ -97,3 +99,12 @@ def set_user_points(user_id, points):
         user.passed_test = True
 
     user.save()
+
+
+def get_my_statistic(user_id):
+    user = User.get(user_id=user_id)
+
+    if user.passed_test:
+        return f'<b>Вы набрали {user.points} баллов за тест!</b>'
+
+    return '<b>Вы ещё не прошли тест!</b>'

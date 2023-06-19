@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters import CommandStart, CommandHelp, Command
 from aiogram.types import InputFile
 
 from loader import dp, bot
-from utils.db_stuff.models import User, get_all_sections_questions_data, set_user_points
+from utils.db_stuff.models import User, get_all_sections_questions_data, set_user_points, get_my_statistic
 from utils.misc.user_inline_keyboards import *
 from states.user_states import *
 from utils.misc.radar_chart import *
@@ -110,3 +110,22 @@ async def get_test_results(callback: types.CallbackQuery, state: FSMContext):
 
     os.remove(f'images/radar_chart{callback.from_user.id}.png')
 
+
+@dp.callback_query_handler(text='test_statistic', state=Test.start)
+async def get_test_statistic(callback: types.CallbackQuery, state: FSMContext):
+    statistic = get_my_statistic(callback.from_user.id)
+
+    await callback.message.edit_text(statistic, reply_markup=inline_test_statistic)
+
+
+@dp.callback_query_handler(text='exit_from_statistic', state=Test.start)
+async def exit_from_test_statistic(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await start_test(callback.message)
+
+
+@dp.callback_query_handler(text='exit_from_test', state=Test.start)
+async def exit_from_test(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.reset_data()
+    await state.reset_state()
