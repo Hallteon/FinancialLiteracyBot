@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
+from loader import bot
 
 answer_callback_data = CallbackData('answer', 'variant')
 
@@ -18,3 +19,7 @@ inline_test_results.add(InlineKeyboardButton(text='Узнать результа
 
 inline_test_statistic = InlineKeyboardMarkup(row_width=1)
 inline_test_statistic.add(InlineKeyboardButton(text='Назад', callback_data='exit_from_statistic'))
+
+inline_share_bot_link = InlineKeyboardMarkup(row_width=1)
+inline_share_bot_link.add(InlineKeyboardButton(text='Поделиться ссылкой на бота',
+                                               switch_inline_query='- бот для повышения уровня вашей финансовой грамотности 📈.'))

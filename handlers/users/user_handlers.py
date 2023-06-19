@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -17,14 +18,10 @@ async def bot_start(message: types.Message):
     bot_name = await dp.bot.get_me()
     user = message.from_user
     new_user = User.get_or_create(user_id=user.id, username=user.username)
-    text = f"👋 <b>{user.username}, привет!\n@{bot_name.username} 🤖 - это бот, с помощью " \
-           f"которого можно развивать свою финансовую грамотность 📝\n" \
-           f"Введи / или отправь команду /help " \
-           f"чтобы увидеть доступные команды этого бота ✅</b>"
+    text = f'<b>{user.username}</b>, здравствуйте!\n\nэто бот, с помощью которого можно определить первоочередные ' \
+           f'задачи для своего финансового роста 💰.\n\nОтправьте команду <b>/test</b>, чтобы начать диагностику.'
 
     await message.answer(text)
-
-    print(message.from_user.id)
 
     if type(new_user) != tuple:
         new_user.save()
@@ -32,7 +29,7 @@ async def bot_start(message: types.Message):
 
 @dp.message_handler(CommandHelp())
 async def bot_help(message: types.Message):
-    text = "Доступные команды бота ✏:\n" \
+    text = "Доступные команды бота 📃:\n" \
            "/test - запустить тест по финансовой грамотности"
 
     await message.answer(text)
@@ -40,7 +37,7 @@ async def bot_help(message: types.Message):
 
 @dp.message_handler(Command('test'))
 async def start_test(message: types.Message):
-    await message.answer('<b>Меню теста:</b>', reply_markup=inline_test_panel)
+    await message.answer('<b>Тест по финансовой грамотности 📋:</b>', reply_markup=inline_test_panel)
     await Test.first()
 
 
@@ -94,14 +91,17 @@ async def get_test_results(callback: types.CallbackQuery, state: FSMContext):
 
     for section_id, section in sections.items():
         total_points += section['total_points']
-        results += f"<b>Секция {section_id} - \"{section['section_name']}\"</b> - <b>{section['total_points']}</b> из <b>{section['all_points']}</b> баллов;\n"
+        results += f"<b>\"{section['section_name']}\"</b> - <b>{section['total_points']}</b> из <b>{section['all_points']}</b> баллов;\n"
 
     radar_chart.savefig(f'images/radar_chart{callback.from_user.id}.png')
     radar_chart_image = InputFile(f'images/radar_chart{callback.from_user.id}.png')
 
     await callback.message.delete()
     await bot.send_photo(callback.message.chat.id, radar_chart_image,
-                         caption=f'<b>Ваши результаты:\n</b>\n{results}\nВсего набрано <b>{total_points}</b> баллов.')
+                         caption=f'<b>Ваши результаты:\n</b>\n{results}\nВсего набрано <b>{total_points}</b> баллов.\n\n'
+                                 f'Выберите для себя 1 - 2 секции из колеса баланса, в которых меньше всего набрали баллов. '
+                                 f'Составьте список задач, для работы над ними.\n\nКак только ситуация улучшиться в этих '
+                                 f'секция, другие секции тоже начнут подтягиваться.\n\nПройдите этот тест через 3 месяца, чтобы отследить свой прогресс 🔥.')
 
     set_user_points(callback.from_user.id, total_points)
 
@@ -109,6 +109,11 @@ async def get_test_results(callback: types.CallbackQuery, state: FSMContext):
     await state.reset_state()
 
     os.remove(f'images/radar_chart{callback.from_user.id}.png')
+
+    await asyncio.sleep(30)
+
+    await callback.message.answer('<b>Если вам понравился этот тест, отправьте ссылку на бота своим друзьям 😉</b>',
+                                  reply_markup=inline_share_bot_link)
 
 
 @dp.callback_query_handler(text='test_statistic', state=Test.start)
