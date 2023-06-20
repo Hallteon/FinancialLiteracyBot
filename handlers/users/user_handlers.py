@@ -7,7 +7,8 @@ from aiogram.dispatcher.filters import CommandStart, CommandHelp, Command
 from aiogram.types import InputFile
 
 from loader import dp, bot
-from utils.db_stuff.models import User, get_all_sections_questions_data, set_user_points, get_my_statistic
+from utils.db_stuff.models import User, get_all_sections_questions_data, set_user_points, get_my_statistic, \
+    get_top_ten_users
 from utils.misc.user_inline_keyboards import *
 from states.user_states import *
 from utils.misc.radar_chart import *
@@ -134,3 +135,10 @@ async def exit_from_test(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await state.reset_data()
     await state.reset_state()
+
+
+@dp.callback_query_handler(text='top_users', state=Test.start)
+async def get_top_users(callback: types.CallbackQuery, state: FSMContext):
+    users = get_top_ten_users()
+
+    await callback.message.edit_text(f'<b>Топ 10 пользователей по баллам 🏆:</b>\n\n{users}', reply_markup=inline_test_statistic)

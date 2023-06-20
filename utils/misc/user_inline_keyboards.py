@@ -1,14 +1,14 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
-from loader import bot
 
 answer_callback_data = CallbackData('answer', 'variant')
 
 inline_test_panel = InlineKeyboardMarkup(row_width=2)
 inline_test_panel.add(InlineKeyboardButton(text='Начать тест', callback_data='start_test'),
-                      InlineKeyboardButton(text='Моя статистика', callback_data='test_statistic'),
-                      InlineKeyboardButton(text='Выйти', callback_data='exit_from_test'))
+                      InlineKeyboardButton(text='Моя статистика', callback_data='test_statistic'))
+inline_test_panel.add(InlineKeyboardButton(text='Рейтинг пользователей по баллам', callback_data='top_users'))
+inline_test_panel.add(InlineKeyboardButton(text='Выйти', callback_data='exit_from_test'))
 
 inline_question_answer = InlineKeyboardMarkup(row_width=2)
 inline_question_answer.add(InlineKeyboardButton(text='Да', callback_data=answer_callback_data.new(variant='yes')),

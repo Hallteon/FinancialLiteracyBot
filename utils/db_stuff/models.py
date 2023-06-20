@@ -108,3 +108,15 @@ def get_my_statistic(user_id):
         return f'<b>Вы набрали {user.points} баллов за тест!</b>'
 
     return '<b>Вы ещё не прошли тест!</b>'
+
+
+def get_top_ten_users():
+    top = ''
+    users = User.select().order_by(-User.points).execute()[:10]
+    iterator = 1
+
+    for user in users:
+        top += f'<b>{iterator}. {user.username} - <b>{user.points}</b> баллов;\n</b>'
+        iterator += 1
+
+    return top
